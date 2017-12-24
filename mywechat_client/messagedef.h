@@ -20,7 +20,7 @@ struct login_packet
     char codelen;
     char code[31];
 };
-#define LOGGIN_SUCCEESS     0
+#define SUCCEESS     0
 #define WRONG_PASSWORD      1
 #define ACCOUNT_CREATED     2
 

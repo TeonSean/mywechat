@@ -23,6 +23,7 @@ public:
     void closeConnect();
     void sendAction(int action);
     int tryLogin(std::string name, std::string code);
+    int tryLogout();
 };
 
 #endif // CLIENT_H

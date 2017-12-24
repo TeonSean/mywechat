@@ -37,6 +37,7 @@ public:
     static void* service_thread(void* p);
     static Server* getInstance();
     static void processLogin(int fd);
+    static void processLogout(int fd);
 };
 
 #endif // SERVER_H

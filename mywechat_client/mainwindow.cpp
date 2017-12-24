@@ -23,6 +23,7 @@ void MainWindow::onConnect()
     ui->conn->setEnabled(false);
     ui->disconn->setEnabled(true);
     ui->login->setEnabled(true);
+    ui->logout->setEnabled(false);
 }
 
 void MainWindow::onDisconnect()
@@ -32,18 +33,21 @@ void MainWindow::onDisconnect()
     ui->conn->setEnabled(true);
     ui->disconn->setEnabled(false);
     ui->login->setEnabled(false);
+    ui->logout->setEnabled(false);
 }
 
 void MainWindow::onLogin()
 {
     logged = true;
     ui->login->setEnabled(false);
+    ui->logout->setEnabled(true);
 }
 
 void MainWindow::onLogout()
 {
     logged = false;
     ui->login->setEnabled(true);
+    ui->logout->setEnabled(false);
 }
 
 void MainWindow::showMessage(QString str)
@@ -74,15 +78,14 @@ void MainWindow::on_login_clicked()
             showMessage("Username and password lengths should be between 1 and 31.");
             return;
         }
-        client.sendAction(ACTION_LOGIN);
         int re = client.tryLogin(usrname, psword);
         switch(re)
         {
         case -1:
-            showMessage("Server error. Log in failed.");
-            onLogout();
+            showMessage("Server error.");
+            onDisconnect();
             break;
-        case LOGGIN_SUCCEESS:
+        case SUCCEESS:
             showMessage("Log in succeess.");
             onLogin();
             break;
@@ -95,8 +98,8 @@ void MainWindow::on_login_clicked()
             onLogin();
             break;
         default:
-            showMessage("Unknown return code.");
-            onLogout();
+            showMessage("Unknown return code. Connection shut down.");
+            onDisconnect();
             break;
         }
     }
@@ -127,4 +130,27 @@ void MainWindow::on_disconn_clicked()
     client.closeConnect();
     showMessage("Disconnected from server.");
     onDisconnect();
+}
+
+void MainWindow::on_logout_clicked()
+{
+    assert(connected);
+    assert(logged);
+    ui->logout->setEnabled(false);
+    int re = client.tryLogout();
+    switch(re)
+    {
+    case -1:
+        showMessage("Server error.");
+        onDisconnect();
+        break;
+    case SUCCEESS:
+        showMessage("Log out succeess.");
+        onLogout();
+        break;
+    default:
+        showMessage("Unknown return code. Connection shut down.");
+        onDisconnect();
+        break;
+    }
 }

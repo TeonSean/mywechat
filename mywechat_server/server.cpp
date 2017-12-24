@@ -40,6 +40,13 @@ Server::Server()
     printf("Waiting for incoming connection...\n\n");
 }
 
+void Server::processLogout(int fd)
+{
+    char re = (char)SUCCEESS;
+    send(fd, &re, 1, 0);
+    instance->usernames.erase(fd);
+}
+
 void Server::processLogin(int fd)
 {
     char* buf = new char[sizeof(login_packet)];
@@ -63,7 +70,7 @@ void Server::processLogin(int fd)
             instance->usernames.erase(fd);
             return;
         }
-        re = (char)LOGGIN_SUCCEESS;
+        re = (char)SUCCEESS;
         send(fd, &re, 1, 0);
         printf("IP %s logged in as user %s.\n\n", instance->clientIPs[fd], usrname.c_str());
         instance->usernames[fd] = usrname;
@@ -94,6 +101,10 @@ void* Server::service_thread(void *p)
         case ACTION_LOGIN:
             printf("IP %s requested logging in.\n\n", instance->clientIPs[fd]);
             processLogin(fd);
+            break;
+        case ACTION_LOGOUT:
+            printf("IP %s requested logging out from %s.\n\n", instance->clientIPs[fd], instance->usernames[fd].c_str());
+            processLogout(fd);
             break;
         default:
             printf("Invalid actioin: %d.\n\n", (int)action);

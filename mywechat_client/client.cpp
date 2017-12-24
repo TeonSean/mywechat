@@ -27,8 +27,21 @@ int Client::tryConnect(const char *ip, int port)
     return connect(client, (sockaddr*)&addr, sizeof(addr));
 }
 
+int Client::tryLogout()
+{
+    sendAction(ACTION_LOGOUT);
+    char re;
+    if(recv(client, &re, 1, 0) <= 0)
+    {
+        closeConnect();
+        return -1;
+    }
+    return re;
+}
+
 int Client::tryLogin(std::string name, std::string code)
 {
+    sendAction(ACTION_LOGIN);
     login_packet p;
     p.namelen = (char)name.size();
     p.codelen = (char)code.size();
