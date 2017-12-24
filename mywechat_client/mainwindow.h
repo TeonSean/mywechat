@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include "client.h"
+#include "messagedef.h"
+#include "assert.h"
 
 namespace Ui {
 class MainWindow;
@@ -17,15 +19,23 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_pushButton_clicked();
 
-    void on_pushButton_2_clicked();
+    void on_login_clicked();
+
+    void on_conn_clicked();
+
+    void on_disconn_clicked();
 
 private:
     Ui::MainWindow *ui;
     Client client;
     bool connected;
+    bool logged;
 
+    void onConnect();
+    void onDisconnect();
+    void onLogin();
+    void onLogout();
     void showMessage(QString str);
 };
 

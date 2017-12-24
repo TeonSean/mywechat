@@ -13,4 +13,15 @@
 #define ACTION_PROFILE      9
 #define ACTION_SYNC         10
 
+struct login_packet
+{
+    char namelen;
+    char name[31];
+    char codelen;
+    char code[31];
+};
+#define LOGGIN_SUCCEESS     0
+#define WRONG_PASSWORD      1
+#define ACCOUNT_CREATED     2
+
 #endif // MESSAGEDEF_H

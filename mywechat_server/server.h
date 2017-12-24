@@ -15,6 +15,7 @@
 #include <net/if.h>
 #include <list>
 #include <map>
+#include "messagedef.h"
 
 #define PORT 8088
 
@@ -26,6 +27,8 @@ private:
     std::list<int> clients;
     std::map<int, pthread_t> threads;
     std::map<int, const char*> clientIPs;
+    std::map<int, std::string> usernames;
+    std::map<std::string, std::string> passwords;
     Server();
 
 public:
@@ -33,6 +36,7 @@ public:
     void loop();
     static void* service_thread(void* p);
     static Server* getInstance();
+    static void processLogin(int fd);
 };
 
 #endif // SERVER_H

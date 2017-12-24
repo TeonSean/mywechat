@@ -40,16 +40,63 @@ Server::Server()
     printf("Waiting for incoming connection...\n\n");
 }
 
+void Server::processLogin(int fd)
+{
+    char* buf = new char[sizeof(login_packet)];
+    if(recv(fd, buf, sizeof(login_packet), 0) <= 0)
+    {
+        printf("Connection with %s is closed.\n\n", instance->clientIPs[fd]);
+        pthread_exit(NULL);
+    }
+    login_packet* lp = (login_packet*)buf;
+    std::string usrname, psword;
+    usrname =usrname.assign(lp->name, (int)lp->namelen);
+    psword = psword.assign(lp->code, (int)lp->codelen);
+    char re;
+    if(instance->passwords.count(usrname))
+    {
+        if(psword != instance->passwords[usrname])
+        {
+            re = (char)WRONG_PASSWORD;
+            send(fd, &re, 1, 0);
+            printf("Username %s and password %s don't match.\n\n", usrname.c_str(), psword.c_str());
+            instance->usernames.erase(fd);
+            return;
+        }
+        re = (char)LOGGIN_SUCCEESS;
+        send(fd, &re, 1, 0);
+        printf("IP %s logged in as user %s.\n\n", instance->clientIPs[fd], usrname.c_str());
+        instance->usernames[fd] = usrname;
+    }
+    else
+    {
+        re = (char)ACCOUNT_CREATED;
+        send(fd, &re, 1, 0);
+        printf("IP %s created account. Username: %s, password: %s.\n\n", instance->clientIPs[fd], usrname.c_str(), psword.c_str());
+        instance->usernames[fd] = usrname;
+        instance->passwords[usrname] = psword;
+    }
+}
+
 void* Server::service_thread(void *p)
 {
     int fd = *(int*)p;
-    char smallbuf[128];
+    char action;
     while(true)
     {
-        if(recv(fd, smallbuf, 128, 0) <= 0)
+        if(recv(fd, &action, 1, 0) <= 0)
         {
-            printf("Connection with %s is closed.\n", instance->clientIPs[fd]);
+            printf("Connection with %s is closed.\n\n", instance->clientIPs[fd]);
             pthread_exit(NULL);
+        }
+        switch(action)
+        {
+        case ACTION_LOGIN:
+            printf("IP %s requested logging in.\n\n", instance->clientIPs[fd]);
+            processLogin(fd);
+            break;
+        default:
+            printf("Invalid actioin: %d.\n\n", (int)action);
         }
     }
 }

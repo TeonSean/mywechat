@@ -30,7 +30,7 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="conn">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -43,9 +43,16 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="disconn">
          <property name="text">
           <string>Disconnect</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="login">
+         <property name="text">
+          <string>Log in</string>
          </property>
         </widget>
        </item>

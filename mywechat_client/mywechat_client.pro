@@ -27,14 +27,17 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     client.cpp \
-    serverconfig.cpp
+    serverconfig.cpp \
+    login.cpp
 
 HEADERS += \
         mainwindow.h \
     client.h \
     serverconfig.h \
-    messagedef.h
+    messagedef.h \
+    login.h
 
 FORMS += \
         mainwindow.ui \
-    serverconfig.ui
+    serverconfig.ui \
+    login.ui

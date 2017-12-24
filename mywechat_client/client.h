@@ -7,6 +7,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <net/if.h>
+#include "messagedef.h"
+#include <string>
 
 class Client
 {
@@ -19,6 +21,8 @@ public:
 
     int tryConnect(const char* ip, int port);
     void closeConnect();
+    void sendAction(int action);
+    int tryLogin(std::string name, std::string code);
 };
 
 #endif // CLIENT_H
