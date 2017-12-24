@@ -28,6 +28,7 @@ private:
     std::map<int, pthread_t> threads;
     std::map<int, const char*> clientIPs;
     std::map<int, std::string> usernames;
+    std::map<std::string, int> usersockets;
     std::map<std::string, std::string> passwords;
     Server();
 

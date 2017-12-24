@@ -60,6 +60,14 @@ void Server::processLogin(int fd)
     usrname =usrname.assign(lp->name, (int)lp->namelen);
     psword = psword.assign(lp->code, (int)lp->codelen);
     char re;
+    if(instance->usersockets.count(usrname))
+    {
+        re = (char)ALREADY_ONLINE;
+        send(fd, &re, 1, 0);
+        printf("Username %s already online. Logging denied.\n\n", usrname.c_str());
+        instance->usernames.erase(fd);
+        return;
+    }
     if(instance->passwords.count(usrname))
     {
         if(psword != instance->passwords[usrname])
@@ -68,12 +76,14 @@ void Server::processLogin(int fd)
             send(fd, &re, 1, 0);
             printf("Username %s and password %s don't match.\n\n", usrname.c_str(), psword.c_str());
             instance->usernames.erase(fd);
+            instance->usersockets.erase(usrname);
             return;
         }
         re = (char)SUCCEESS;
         send(fd, &re, 1, 0);
         printf("IP %s logged in as user %s.\n\n", instance->clientIPs[fd], usrname.c_str());
         instance->usernames[fd] = usrname;
+        instance->usersockets[usrname] = fd;
     }
     else
     {
@@ -82,6 +92,7 @@ void Server::processLogin(int fd)
         printf("IP %s created account. Username: %s, password: %s.\n\n", instance->clientIPs[fd], usrname.c_str(), psword.c_str());
         instance->usernames[fd] = usrname;
         instance->passwords[usrname] = psword;
+        instance->usersockets[usrname] = fd;
     }
 }
 

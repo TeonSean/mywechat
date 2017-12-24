@@ -97,6 +97,10 @@ void MainWindow::on_login_clicked()
             showMessage("Log in succeess. We have created an account for you.");
             onLogin();
             break;
+        case ALREADY_ONLINE:
+            showMessage("User already online. Logging denied.");
+            onLogout();
+            break;
         default:
             showMessage("Unknown return code. Connection shut down.");
             onDisconnect();
