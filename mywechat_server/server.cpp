@@ -130,7 +130,13 @@ void Server::processAdd(int fd)
     name = name.assign(buf + 1, len);
     std::string requester = instance->usernames[fd];
     char re;
-    if(instance->passwords.count(name))
+    if(requester == name)
+    {
+        re = (char)ADD_YOURSELF;
+        send(fd, &re, 1, 0);
+        std::cout << "User " << name << " tried to add himself as friend. Adding friend failed.\n\n";
+    }
+    else if(instance->passwords.count(name))
     {
         if(instance->friends.count(requester))
         {

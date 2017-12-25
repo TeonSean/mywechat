@@ -26,5 +26,6 @@ struct login_packet
 #define ALREADY_ONLINE      3
 #define ALREADY_FRIEND      4
 #define USER_NON_EXIST      5
+#define ADD_YOURSELF        6
 
 #endif // MESSAGEDEF_H

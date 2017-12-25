@@ -238,6 +238,9 @@ void MainWindow::on_add_finished(int re)
         showMessage("Adding friend success.");
         emit tryList();
         break;
+    case ADD_YOURSELF:
+        showMessage("You cannot add yourself as your friend.");
+        break;
     case ALREADY_FRIEND:
         showMessage("This user is already your friend.");
         break;
