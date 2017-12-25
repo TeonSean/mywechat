@@ -9,21 +9,37 @@
 #include <net/if.h>
 #include "messagedef.h"
 #include <string>
+#include <QVector>
+#include <QObject>
+#include <QString>
+#include <iostream>
 
-class Client
+class Client: public QObject
 {
+    Q_OBJECT
+
 private:
     int client;
 
 public:
-    Client();
+    explicit Client(QObject *parent = 0);
     ~Client();
 
-    int tryConnect(const char* ip, int port);
+public slots:
+    void tryConnect(const char* ip, int port);
     void closeConnect();
     void sendAction(int action);
-    int tryLogin(std::string name, std::string code);
-    int tryLogout();
+    void tryLogin(QString name, QString code);
+    void tryLogout();
+    void trySearch(QVector<QString>* strings);
+
+signals:
+    void serverError();
+    void connectFinished(int re);
+    void loginFinished(int re);
+    void logoutFinished(int re);
+    void searchFinished(int re, QVector<QString>* strs);
+
 };
 
 #endif // CLIENT_H

@@ -3,6 +3,7 @@
 #include "serverconfig.h"
 #include "QMessageBox"
 #include "login.h"
+#include <QThread>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -10,6 +11,19 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     onDisconnect();
+    QThread* thread = new QThread();
+    thread->start();
+    client.moveToThread(thread);
+    connect(&client, SIGNAL(serverError()), this, SLOT(on_server_error()));
+    connect(&client, SIGNAL(connectFinished(int)), this, SLOT(on_connect_finished(int)));
+    connect(&client, SIGNAL(loginFinished(int)), this, SLOT(on_login_finished(int)));
+    connect(&client, SIGNAL(logoutFinished(int)), this, SLOT(on_logout_finished(int)));
+    connect(&client, SIGNAL(searchFinished(int,QVector<QString>*)), this, SLOT(on_search_finished(int,QVector<QString>*)));
+    connect(this, SIGNAL(closeConnect()), &client, SLOT(closeConnect()));
+    connect(this, SIGNAL(tryConnect(const char*,int)), &client, SLOT(tryConnect(const char*,int)));
+    connect(this, SIGNAL(tryLogin(QString,QString)), &client, SLOT(tryLogin(QString,QString)));
+    connect(this, SIGNAL(tryLogout()), &client, SLOT(tryLogout()));
+    connect(this, SIGNAL(trySearch(QVector<QString>*)), &client, SLOT(trySearch(QVector<QString>*)));
 }
 
 MainWindow::~MainWindow()
@@ -24,6 +38,7 @@ void MainWindow::onConnect()
     ui->disconn->setEnabled(true);
     ui->login->setEnabled(true);
     ui->logout->setEnabled(false);
+    ui->search->setEnabled(false);
 }
 
 void MainWindow::onDisconnect()
@@ -34,6 +49,7 @@ void MainWindow::onDisconnect()
     ui->disconn->setEnabled(false);
     ui->login->setEnabled(false);
     ui->logout->setEnabled(false);
+    ui->search->setEnabled(false);
 }
 
 void MainWindow::onLogin()
@@ -41,6 +57,7 @@ void MainWindow::onLogin()
     logged = true;
     ui->login->setEnabled(false);
     ui->logout->setEnabled(true);
+    ui->search->setEnabled(true);
 }
 
 void MainWindow::onLogout()
@@ -48,6 +65,7 @@ void MainWindow::onLogout()
     logged = false;
     ui->login->setEnabled(true);
     ui->logout->setEnabled(false);
+    ui->search->setEnabled(false);
 }
 
 void MainWindow::showMessage(QString str)
@@ -55,6 +73,12 @@ void MainWindow::showMessage(QString str)
     QMessageBox mb(this);
     mb.setText(str);
     mb.exec();
+}
+
+void MainWindow::on_server_error()
+{
+    showMessage("Server error.");
+    onDisconnect();
 }
 
 void MainWindow::on_login_clicked()
@@ -65,7 +89,7 @@ void MainWindow::on_login_clicked()
     Login* login = new Login(this);
     if(login->exec() == QDialog::Accepted)
     {
-        std::string usrname, psword;
+        QString usrname, psword;
         usrname = login->getUsername();
         psword = login->getPassword();
         if(usrname.size() == 0 || usrname.size() > 31)
@@ -78,34 +102,34 @@ void MainWindow::on_login_clicked()
             showMessage("Username and password lengths should be between 1 and 31.");
             return;
         }
-        int re = client.tryLogin(usrname, psword);
-        switch(re)
-        {
-        case -1:
-            showMessage("Server error.");
-            onDisconnect();
-            break;
-        case SUCCEESS:
-            showMessage("Log in succeess.");
-            onLogin();
-            break;
-        case WRONG_PASSWORD:
-            showMessage("Wrong password. Please try again.");
-            onLogout();
-            break;
-        case ACCOUNT_CREATED:
-            showMessage("Log in succeess. We have created an account for you.");
-            onLogin();
-            break;
-        case ALREADY_ONLINE:
-            showMessage("User already online. Logging denied.");
-            onLogout();
-            break;
-        default:
-            showMessage("Unknown return code. Connection shut down.");
-            onDisconnect();
-            break;
-        }
+        emit tryLogin(usrname, psword);
+    }
+}
+
+void MainWindow::on_login_finished(int re)
+{
+    switch(re)
+    {
+    case SUCCESS:
+        showMessage("Log in succeess.");
+        onLogin();
+        break;
+    case WRONG_PASSWORD:
+        showMessage("Wrong password. Please try again.");
+        onLogout();
+        break;
+    case ACCOUNT_CREATED:
+        showMessage("Log in succeess. We have created an account for you.");
+        onLogin();
+        break;
+    case ALREADY_ONLINE:
+        showMessage("User already online. Logging denied.");
+        onLogout();
+        break;
+    default:
+        showMessage("Unknown return code. Connection shut down.");
+        onDisconnect();
+        break;
     }
 }
 
@@ -115,25 +139,30 @@ void MainWindow::on_conn_clicked()
     ServerConfig* sc = new ServerConfig(this);
     if(sc->exec() == QDialog::Accepted)
     {
-        if(client.tryConnect(sc->getIP().toStdString().c_str(), sc->getPort()) != -1)
-        {
-            showMessage("Connection succeeded.");
-            onConnect();
-        }
-        else
-        {
-            showMessage("Connection failed.");
-            onDisconnect();
-        }
+        emit tryConnect(sc->getIP().toStdString().c_str(), sc->getPort());
+    }
+}
+
+void MainWindow::on_connect_finished(int re)
+{
+    if(re != -1)
+    {
+        showMessage("Connection succeeded.");
+        onConnect();
+    }
+    else
+    {
+        showMessage("Connection failed.");
+        onDisconnect();
     }
 }
 
 void MainWindow::on_disconn_clicked()
 {
     assert(connected);
-    client.closeConnect();
     showMessage("Disconnected from server.");
     onDisconnect();
+    emit closeConnect();
 }
 
 void MainWindow::on_logout_clicked()
@@ -141,14 +170,14 @@ void MainWindow::on_logout_clicked()
     assert(connected);
     assert(logged);
     ui->logout->setEnabled(false);
-    int re = client.tryLogout();
+    emit tryLogout();
+}
+
+void MainWindow::on_logout_finished(int re)
+{
     switch(re)
     {
-    case -1:
-        showMessage("Server error.");
-        onDisconnect();
-        break;
-    case SUCCEESS:
+    case SUCCESS:
         showMessage("Log out succeess.");
         onLogout();
         break;
@@ -157,4 +186,37 @@ void MainWindow::on_logout_clicked()
         onDisconnect();
         break;
     }
+}
+
+void MainWindow::on_search_clicked()
+{
+    assert(connected);
+    assert(logged);
+    ui->search->setEnabled(false);
+    QVector<QString>* strs = new QVector<QString>;
+    emit trySearch(strs);
+}
+
+void MainWindow::on_search_finished(int re, QVector<QString>* strs)
+{
+    switch(re)
+    {
+    case SUCCESS:
+    {
+        ui->search->setEnabled(true);
+        QStandardItemModel* model = new QStandardItemModel(this);
+        for(int i = 0; i < strs->size(); i++)
+        {
+            QStandardItem* item = new QStandardItem((*strs)[i]);
+            model->appendRow(item);
+        }
+        ui->users->setModel(model);
+        break;
+    }
+    default:
+        showMessage("Unknown return code. Connection shut down.");
+        onDisconnect();
+        break;
+    }
+    delete strs;
 }

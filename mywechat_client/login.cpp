@@ -13,12 +13,12 @@ Login::~Login()
     delete ui;
 }
 
-std::string Login::getUsername()
+QString Login::getUsername()
 {
-    return ui->lineEdit->text().toStdString();
+    return ui->lineEdit->text();
 }
 
-std::string Login::getPassword()
+QString Login::getPassword()
 {
-    return ui->lineEdit_2->text().toStdString();
+    return ui->lineEdit_2->text();
 }

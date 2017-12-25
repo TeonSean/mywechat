@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>455</width>
+    <height>301</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,15 +17,33 @@
    <widget class="QWidget" name="horizontalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>401</width>
-      <height>301</height>
+      <x>10</x>
+      <y>10</y>
+      <width>431</width>
+      <height>281</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="20,5,1">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="9,1">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout"/>
+      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,1">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QListView" name="users"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout" stretch="5,1">
+         <item>
+          <widget class="QListView" name="friends"/>
+         </item>
+         <item>
+          <widget class="QTextBrowser" name="profile"/>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -64,6 +82,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="search">
+         <property name="text">
+          <string>Search</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_3"/>
+       </item>
+       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -77,9 +105,6 @@
         </spacer>
        </item>
       </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3"/>
      </item>
     </layout>
    </widget>

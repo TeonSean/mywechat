@@ -35,16 +35,39 @@ Server::Server()
         exit(-1);
     }
     memcpy(&sin, &ifr.ifr_addr, sizeof(sin));
-    printf("Server started.\n\n");
-    printf("Listening on %s, port %d.\n\n", inet_ntoa(sin.sin_addr), PORT);
-    printf("Waiting for incoming connection...\n\n");
+    std::cout << "Server started.\n\n";
+    std::cout << "Listening on " << inet_ntoa(sin.sin_addr) << ", port " << PORT << ".\n\n";
+    std::cout << "Waiting for incoming connection...\n\n";
 }
 
 void Server::processLogout(int fd)
 {
-    char re = (char)SUCCEESS;
+    char re = (char)SUCCESS;
     send(fd, &re, 1, 0);
     instance->usernames.erase(fd);
+}
+
+void Server::processSearch(int fd)
+{
+    int cnt = instance->usernames.size() - 1;
+    char buf[32];
+    sprintf(buf, "%d", cnt);
+    send(fd, buf, sizeof(int), 0);
+    std::map<int, std::string>::iterator iter;
+    std::cout << cnt << " entries to send in total.\n\n";
+    for(iter = instance->usernames.begin(); iter != instance->usernames.end(); iter++)
+    {
+        if(fd == iter->first)
+        {
+            continue;
+        }
+        std::string& name = iter->second;
+        buf[0] = (char)(name.size());
+        name.copy(buf + 1, name.size());
+        send(fd, buf, 32, 0);
+        std::cout << --cnt << " entries remaining to send.\n\n";
+    }
+    std::cout << "Finished sending.\n\n";
 }
 
 void Server::processLogin(int fd)
@@ -52,8 +75,7 @@ void Server::processLogin(int fd)
     char* buf = new char[sizeof(login_packet)];
     if(recv(fd, buf, sizeof(login_packet), 0) <= 0)
     {
-        printf("Connection with %s is closed.\n\n", instance->clientIPs[fd]);
-        pthread_exit(NULL);
+        onConnectionClosed(fd);
     }
     login_packet* lp = (login_packet*)buf;
     std::string usrname, psword;
@@ -64,7 +86,7 @@ void Server::processLogin(int fd)
     {
         re = (char)ALREADY_ONLINE;
         send(fd, &re, 1, 0);
-        printf("Username %s already online. Logging denied.\n\n", usrname.c_str());
+        std::cout << "Username " << usrname.c_str() << "already online. Logging denied.\n\n";
         instance->usernames.erase(fd);
         return;
     }
@@ -74,14 +96,14 @@ void Server::processLogin(int fd)
         {
             re = (char)WRONG_PASSWORD;
             send(fd, &re, 1, 0);
-            printf("Username %s and password %s don't match.\n\n", usrname.c_str(), psword.c_str());
+            std::cout << "Username " << usrname.c_str() << " and password " << psword.c_str() << " don't match.\n\n";
             instance->usernames.erase(fd);
             instance->usersockets.erase(usrname);
             return;
         }
-        re = (char)SUCCEESS;
+        re = (char)SUCCESS;
         send(fd, &re, 1, 0);
-        printf("IP %s logged in as user %s.\n\n", instance->clientIPs[fd], usrname.c_str());
+        std::cout << "IP " << instance->clientIPs[fd] << " logged in as user " << usrname.c_str() << ".\n\n";
         instance->usernames[fd] = usrname;
         instance->usersockets[usrname] = fd;
     }
@@ -89,11 +111,25 @@ void Server::processLogin(int fd)
     {
         re = (char)ACCOUNT_CREATED;
         send(fd, &re, 1, 0);
-        printf("IP %s created account. Username: %s, password: %s.\n\n", instance->clientIPs[fd], usrname.c_str(), psword.c_str());
+        std::cout << "IP " << instance->clientIPs[fd] << " created account. Username: " << usrname.c_str() << ", password: " << psword.c_str() << ".\n\n";
         instance->usernames[fd] = usrname;
         instance->passwords[usrname] = psword;
         instance->usersockets[usrname] = fd;
     }
+}
+
+void Server::onConnectionClosed(int fd)
+{
+    std::cout << "Connection with " << instance->clientIPs[fd] << " is closed.\n\n";
+    instance->clientIPs.erase(fd);
+    instance->threads.erase(fd);
+    instance->clients.remove(fd);
+    if(instance->usernames.count(fd))
+    {
+        instance->usersockets.erase(instance->usernames[fd]);
+        instance->usernames.erase(fd);
+    }
+    pthread_exit(NULL);
 }
 
 void* Server::service_thread(void *p)
@@ -104,23 +140,27 @@ void* Server::service_thread(void *p)
     {
         if(recv(fd, &action, 1, 0) <= 0)
         {
-            printf("Connection with %s is closed.\n\n", instance->clientIPs[fd]);
-            pthread_exit(NULL);
+            onConnectionClosed(fd);
         }
         switch(action)
         {
         case ACTION_LOGIN:
-            printf("IP %s requested logging in.\n\n", instance->clientIPs[fd]);
+            std::cout << "IP " << instance->clientIPs[fd] << " requested logging in.\n\n";
             processLogin(fd);
             break;
         case ACTION_LOGOUT:
-            printf("IP %s requested logging out from %s.\n\n", instance->clientIPs[fd], instance->usernames[fd].c_str());
+            std::cout << "IP " << instance->clientIPs[fd] << " requested logging out.\n\n";
             processLogout(fd);
             break;
+        case ACTION_SEARCH:
+            std::cout << "IP " << instance->clientIPs[fd] << " requested searching.\n\n";
+            processSearch(fd);
+            break;
         default:
-            printf("Invalid actioin: %d.\n\n", (int)action);
+            std::cout << "Invalid actioin: " << (int)action << ".\n\n";
         }
     }
+    std::cout.flush();
 }
 
 Server* Server::getInstance()

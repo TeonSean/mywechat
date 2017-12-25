@@ -15,8 +15,8 @@ public:
     explicit Login(QWidget *parent = 0);
     ~Login();
 
-    std::string getUsername();
-    std::string getPassword();
+    QString getUsername();
+    QString getPassword();
 
 private:
     Ui::Login *ui;

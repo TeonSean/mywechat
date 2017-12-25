@@ -16,6 +16,7 @@
 #include <list>
 #include <map>
 #include "messagedef.h"
+#include <iostream>
 
 #define PORT 8088
 
@@ -39,6 +40,8 @@ public:
     static Server* getInstance();
     static void processLogin(int fd);
     static void processLogout(int fd);
+    static void processSearch(int fd);
+    static void onConnectionClosed(int fd);
 };
 
 #endif // SERVER_H

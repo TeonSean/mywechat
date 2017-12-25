@@ -5,6 +5,9 @@
 #include "client.h"
 #include "messagedef.h"
 #include "assert.h"
+#include <QListView>
+#include <QStandardItem>
+#include <QStandardItemModel>
 
 namespace Ui {
 class MainWindow;
@@ -28,6 +31,18 @@ private slots:
 
     void on_logout_clicked();
 
+    void on_search_clicked();
+
+    void on_server_error();
+
+    void on_connect_finished(int re);
+
+    void on_login_finished(int re);
+
+    void on_logout_finished(int re);
+
+    void on_search_finished(int re, QVector<QString>* strs);
+
 private:
     Ui::MainWindow *ui;
     Client client;
@@ -39,6 +54,13 @@ private:
     void onLogin();
     void onLogout();
     void showMessage(QString str);
+
+signals:
+    void tryConnect(const char* ip, int port);
+    void closeConnect();
+    void tryLogin(QString name, QString code);
+    void tryLogout();
+    void trySearch(QVector<QString>* strings);
 };
 
 #endif // MAINWINDOW_H
