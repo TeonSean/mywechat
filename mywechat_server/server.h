@@ -46,6 +46,7 @@ public:
     static void processSearch(int fd);
     static void processAdd(int fd);
     static void processList(int fd);
+    static void processProfile(int fd);
 };
 
 #endif // SERVER_H

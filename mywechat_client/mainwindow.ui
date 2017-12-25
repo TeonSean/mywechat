@@ -103,6 +103,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="prof">
+         <property name="text">
+          <string>Profile</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QVBoxLayout" name="verticalLayout_3"/>
        </item>
        <item>

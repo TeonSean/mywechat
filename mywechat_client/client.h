@@ -34,6 +34,7 @@ public slots:
     void trySearch(QVector<QString>* strings);
     void tryAdd(QString name);
     void tryList(QVector<QString>* strings);
+    void tryProfile();
 
 signals:
     void serverError();
@@ -43,6 +44,7 @@ signals:
     void searchFinished(int re, QVector<QString>* strs);
     void addFinished(int re);
     void listFinished(int re, QVector<QString>* strings);
+    void profileFinished(int re, QString name, QString code);
 
 };
 

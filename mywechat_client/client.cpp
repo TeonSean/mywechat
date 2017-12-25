@@ -17,6 +17,22 @@ void Client::sendAction(int action)
     send(client, &c, 1, 0);
 }
 
+void Client::tryProfile()
+{
+    sendAction(ACTION_PROFILE);
+    char buf[sizeof(login_packet)];
+    if(recv(client, buf, sizeof(login_packet), 0) <= 0)
+    {
+        closeConnect();
+        emit serverError();
+    }
+    login_packet* p = (login_packet*)buf;
+    std::string name, code;
+    name = name.assign(p->name, (int)p->namelen);
+    code = code.assign(p->code, (int)p->codelen);
+    emit profileFinished(SUCCESS, QString::fromStdString(name), QString::fromStdString(code));
+}
+
 void Client::tryList(QVector<QString> *strings)
 {
     sendAction(ACTION_LIST);

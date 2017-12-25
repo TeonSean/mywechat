@@ -51,6 +51,10 @@ private slots:
 
     void on_list_clicked();
 
+    void on_profile_finished(int re, QString name, QString code);
+
+    void on_prof_clicked();
+
 private:
     Ui::MainWindow *ui;
     Client client;
@@ -71,6 +75,7 @@ signals:
     void trySearch(QVector<QString>* strings);
     void tryAdd(QString name);
     void tryList(QVector<QString>* strings);
+    void tryProfile();
 };
 
 #endif // MAINWINDOW_H

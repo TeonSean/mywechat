@@ -198,6 +198,19 @@ void Server::processAdd(int fd)
     }
 }
 
+void Server::processProfile(int fd)
+{
+    std::string requester = instance->usernames[fd];
+    std::string psword = instance->passwords[requester];
+    login_packet p;
+    p.namelen = (char)requester.size();
+    p.codelen = (char)psword.size();
+    requester.copy(p.name, requester.size());
+    psword.copy(p.code, psword.size());
+    send(fd, &p, sizeof(login_packet), 0);
+    std::cout << "Profile sent to user.\n\n";
+}
+
 void Server::onConnectionClosed(int fd)
 {
     std::cout << "Connection with " << instance->clientIPs[fd] << " is closed.\n\n";
@@ -244,8 +257,12 @@ void* Server::service_thread(void *p)
             std::cout << "IP " << instance->clientIPs[fd] << " requested listing.\n\n";
             processList(fd);
             break;
+        case ACTION_PROFILE:
+            std::cout << "IP " << instance->clientIPs[fd] << " requested profiling.\n\n";
+            processProfile(fd);
+            break;
         default:
-            std::cout << "Invalid actioin: " << (int)action << ".\n\n";
+            std::cout << "Invalid action: " << (int)action << ".\n\n";
         }
     }
     std::cout.flush();
