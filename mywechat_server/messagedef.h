@@ -24,8 +24,8 @@ struct login_packet
 #define WRONG_PASSWORD      1
 #define ACCOUNT_CREATED     2
 #define ALREADY_ONLINE      3
-#define ALREADY_FRIEND      4
-#define USER_NON_EXIST      5
-#define ADD_YOURSELF        6
+#define ALREADY_FRIEND      1
+#define USER_NON_EXIST      2
+#define ADD_YOURSELF        3
 
 #endif // MESSAGEDEF_H

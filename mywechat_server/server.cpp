@@ -47,6 +47,35 @@ void Server::processLogout(int fd)
     instance->usernames.erase(fd);
 }
 
+void Server::processList(int fd)
+{
+    char buf[32];
+    std::string requester = instance->usernames[fd];
+    if(!instance->friends.count(requester) || instance->friends[requester].size() == 0)
+    {
+        sprintf(buf, "%d", 0);
+        send(fd, buf, sizeof(int), 0);
+        std::cout << "0 entries to send in total.\n\n";
+        std::cout << "Finished sending.\n\n";
+        return;
+    }
+    std::set<std::string>& names = instance->friends[requester];
+    int cnt = names.size();
+    sprintf(buf, "%d", cnt);
+    send(fd, buf, sizeof(int), 0);
+    std::cout << cnt << " entries to send in total.\n\n";
+    std::set<std::string>::iterator iter;
+    for(iter = names.begin(); iter != names.end(); iter++)
+    {
+        std::string name = *iter;
+        buf[0] = (char)name.size();
+        name.copy(buf + 1, name.size());
+        send(fd, buf, 32, 0);
+        std::cout << --cnt << " entries remaining to send.\n\n";
+    }
+    std::cout << "Finished sending.\n\n";
+}
+
 void Server::processSearch(int fd)
 {
     int cnt = instance->usernames.size() - 1;
@@ -210,6 +239,10 @@ void* Server::service_thread(void *p)
         case ACTION_ADD:
             std::cout << "IP " << instance->clientIPs[fd] << " requested adding friend.\n\n";
             processAdd(fd);
+            break;
+        case ACTION_LIST:
+            std::cout << "IP " << instance->clientIPs[fd] << " requested listing.\n\n";
+            processList(fd);
             break;
         default:
             std::cout << "Invalid actioin: " << (int)action << ".\n\n";

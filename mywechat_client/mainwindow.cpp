@@ -22,12 +22,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&client, SIGNAL(logoutFinished(int)), this, SLOT(on_logout_finished(int)));
     connect(&client, SIGNAL(searchFinished(int,QVector<QString>*)), this, SLOT(on_search_finished(int,QVector<QString>*)));
     connect(&client, SIGNAL(addFinished(int)), this, SLOT(on_add_finished(int)));
+    connect(&client, SIGNAL(listFinished(int,QVector<QString>*)), this, SLOT(on_list_finished(int,QVector<QString>*)));
     connect(this, SIGNAL(closeConnect()), &client, SLOT(closeConnect()));
     connect(this, SIGNAL(tryConnect(const char*,int)), &client, SLOT(tryConnect(const char*,int)));
     connect(this, SIGNAL(tryLogin(QString,QString)), &client, SLOT(tryLogin(QString,QString)));
     connect(this, SIGNAL(tryLogout()), &client, SLOT(tryLogout()));
     connect(this, SIGNAL(trySearch(QVector<QString>*)), &client, SLOT(trySearch(QVector<QString>*)));
     connect(this, SIGNAL(tryAdd(QString)), &client, SLOT(tryAdd(QString)));
+    connect(this, SIGNAL(tryList(QVector<QString>*)), &client, SLOT(tryList(QVector<QString>*)));
 }
 
 MainWindow::~MainWindow()
@@ -44,6 +46,7 @@ void MainWindow::onConnect()
     ui->logout->setEnabled(false);
     ui->search->setEnabled(false);
     ui->add->setEnabled(false);
+    ui->list->setEnabled(false);
 }
 
 void MainWindow::onDisconnect()
@@ -56,6 +59,7 @@ void MainWindow::onDisconnect()
     ui->logout->setEnabled(false);
     ui->search->setEnabled(false);
     ui->add->setEnabled(false);
+    ui->list->setEnabled(false);
 }
 
 void MainWindow::onLogin()
@@ -65,6 +69,7 @@ void MainWindow::onLogin()
     ui->logout->setEnabled(true);
     ui->search->setEnabled(true);
     ui->add->setEnabled(true);
+    ui->list->setEnabled(true);
 }
 
 void MainWindow::onLogout()
@@ -74,6 +79,7 @@ void MainWindow::onLogout()
     ui->logout->setEnabled(false);
     ui->search->setEnabled(false);
     ui->add->setEnabled(false);
+    ui->list->setEnabled(false);
 }
 
 void MainWindow::showMessage(QString str)
@@ -201,8 +207,7 @@ void MainWindow::on_search_clicked()
     assert(connected);
     assert(logged);
     ui->search->setEnabled(false);
-    QVector<QString>* strs = new QVector<QString>;
-    emit trySearch(strs);
+    emit trySearch(new QVector<QString>());
 }
 
 void MainWindow::on_search_finished(int re, QVector<QString>* strs)
@@ -236,7 +241,8 @@ void MainWindow::on_add_finished(int re)
     {
     case SUCCESS:
         showMessage("Adding friend success.");
-        emit tryList();
+        ui->list->setEnabled(false);
+        emit tryList(new QVector<QString>());
         break;
     case ADD_YOURSELF:
         showMessage("You cannot add yourself as your friend.");
@@ -269,4 +275,36 @@ void MainWindow::on_add_clicked()
         }
         emit tryAdd(uni->getUsername());
     }
+}
+
+void MainWindow::on_list_finished(int re, QVector<QString> *strs)
+{
+    switch(re)
+    {
+    case SUCCESS:
+    {
+        ui->list->setEnabled(true);
+        QStandardItemModel* model = new QStandardItemModel(this);
+        for(int i = 0; i < strs->size(); i++)
+        {
+            QStandardItem* item = new QStandardItem((*strs)[i]);
+            model->appendRow(item);
+        }
+        ui->friends->setModel(model);
+        break;
+    }
+    default:
+        showMessage("Unknown return code. Connection shut down.");
+        onDisconnect();
+        break;
+    }
+    delete strs;
+}
+
+void MainWindow::on_list_clicked()
+{
+    assert(connected);
+    assert(logged);
+    ui->list->setEnabled(false);
+    emit tryList(new QVector<QString>());
 }

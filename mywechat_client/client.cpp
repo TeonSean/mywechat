@@ -17,6 +17,34 @@ void Client::sendAction(int action)
     send(client, &c, 1, 0);
 }
 
+void Client::tryList(QVector<QString> *strings)
+{
+    sendAction(ACTION_LIST);
+    char buffer[32];
+    int cnt;
+    if(recv(client, buffer, sizeof(int), 0) <= 0)
+    {
+        closeConnect();
+        emit serverError();
+    }
+    sscanf(buffer, "%d", &cnt);
+    std::cout << cnt << " friends in total.\n";
+    std::cout.flush();
+    while(cnt--)
+    {
+        if(recv(client, buffer, 32, 0) <= 0)
+        {
+            closeConnect();
+            emit serverError();
+        }
+        int len = (int)buffer[0];
+        std::string str;
+        str = str.assign(buffer + 1, len);
+        strings->push_back(QString::fromStdString(str));
+    }
+    emit listFinished(SUCCESS, strings);
+}
+
 void Client::trySearch(QVector<QString>* strings)
 {
     sendAction(ACTION_SEARCH);

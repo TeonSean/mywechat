@@ -40,11 +40,12 @@ public:
     void loop();
     static void* service_thread(void* p);
     static Server* getInstance();
+    static void onConnectionClosed(int fd);
     static void processLogin(int fd);
     static void processLogout(int fd);
     static void processSearch(int fd);
-    static void onConnectionClosed(int fd);
     static void processAdd(int fd);
+    static void processList(int fd);
 };
 
 #endif // SERVER_H
