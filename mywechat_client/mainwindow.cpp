@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "serverconfig.h"
+#include "usernameinput.h"
 #include "QMessageBox"
 #include "login.h"
 #include <QThread>
@@ -13,17 +14,20 @@ MainWindow::MainWindow(QWidget *parent) :
     onDisconnect();
     QThread* thread = new QThread();
     thread->start();
+    setFixedSize(size());
     client.moveToThread(thread);
     connect(&client, SIGNAL(serverError()), this, SLOT(on_server_error()));
     connect(&client, SIGNAL(connectFinished(int)), this, SLOT(on_connect_finished(int)));
     connect(&client, SIGNAL(loginFinished(int)), this, SLOT(on_login_finished(int)));
     connect(&client, SIGNAL(logoutFinished(int)), this, SLOT(on_logout_finished(int)));
     connect(&client, SIGNAL(searchFinished(int,QVector<QString>*)), this, SLOT(on_search_finished(int,QVector<QString>*)));
+    connect(&client, SIGNAL(addFinished(int)), this, SLOT(on_add_finished(int)));
     connect(this, SIGNAL(closeConnect()), &client, SLOT(closeConnect()));
     connect(this, SIGNAL(tryConnect(const char*,int)), &client, SLOT(tryConnect(const char*,int)));
     connect(this, SIGNAL(tryLogin(QString,QString)), &client, SLOT(tryLogin(QString,QString)));
     connect(this, SIGNAL(tryLogout()), &client, SLOT(tryLogout()));
     connect(this, SIGNAL(trySearch(QVector<QString>*)), &client, SLOT(trySearch(QVector<QString>*)));
+    connect(this, SIGNAL(tryAdd(QString)), &client, SLOT(tryAdd(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -39,6 +43,7 @@ void MainWindow::onConnect()
     ui->login->setEnabled(true);
     ui->logout->setEnabled(false);
     ui->search->setEnabled(false);
+    ui->add->setEnabled(false);
 }
 
 void MainWindow::onDisconnect()
@@ -50,6 +55,7 @@ void MainWindow::onDisconnect()
     ui->login->setEnabled(false);
     ui->logout->setEnabled(false);
     ui->search->setEnabled(false);
+    ui->add->setEnabled(false);
 }
 
 void MainWindow::onLogin()
@@ -58,6 +64,7 @@ void MainWindow::onLogin()
     ui->login->setEnabled(false);
     ui->logout->setEnabled(true);
     ui->search->setEnabled(true);
+    ui->add->setEnabled(true);
 }
 
 void MainWindow::onLogout()
@@ -66,6 +73,7 @@ void MainWindow::onLogout()
     ui->login->setEnabled(true);
     ui->logout->setEnabled(false);
     ui->search->setEnabled(false);
+    ui->add->setEnabled(false);
 }
 
 void MainWindow::showMessage(QString str)
@@ -219,4 +227,43 @@ void MainWindow::on_search_finished(int re, QVector<QString>* strs)
         break;
     }
     delete strs;
+}
+
+void MainWindow::on_add_finished(int re)
+{
+    ui->add->setEnabled(true);
+    switch(re)
+    {
+    case SUCCESS:
+        showMessage("Adding friend success.");
+        emit tryList();
+        break;
+    case ALREADY_FRIEND:
+        showMessage("This user is already your friend.");
+        break;
+    case USER_NON_EXIST:
+        showMessage("This user does not exist.");
+        break;
+    default:
+        showMessage("Unknown return code. Connection shut down.");
+        onDisconnect();
+        break;
+    }
+}
+
+void MainWindow::on_add_clicked()
+{
+    assert(connected);
+    assert(logged);
+    UsernameInput* uni = new UsernameInput(this);
+    ui->add->setEnabled(false);
+    if(uni->exec() == QDialog::Accepted)
+    {
+        if(uni->getUsername().size() == 0 || uni->getUsername().size() > 31)
+        {
+            showMessage("Username length should be between 1 and 31.");
+            return;
+        }
+        emit tryAdd(uni->getUsername());
+    }
 }

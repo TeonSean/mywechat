@@ -43,6 +43,10 @@ private slots:
 
     void on_search_finished(int re, QVector<QString>* strs);
 
+    void on_add_finished(int re);
+
+    void on_add_clicked();
+
 private:
     Ui::MainWindow *ui;
     Client client;
@@ -61,6 +65,8 @@ signals:
     void tryLogin(QString name, QString code);
     void tryLogout();
     void trySearch(QVector<QString>* strings);
+    void tryAdd(QString name);
+    void tryList();
 };
 
 #endif // MAINWINDOW_H

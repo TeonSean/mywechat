@@ -20,9 +20,11 @@ struct login_packet
     char codelen;
     char code[31];
 };
-#define SUCCESS            0
+#define SUCCESS             0
 #define WRONG_PASSWORD      1
 #define ACCOUNT_CREATED     2
 #define ALREADY_ONLINE      3
+#define ALREADY_FRIEND      4
+#define USER_NON_EXIST      5
 
 #endif // MESSAGEDEF_H

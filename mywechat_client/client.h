@@ -32,6 +32,7 @@ public slots:
     void tryLogin(QString name, QString code);
     void tryLogout();
     void trySearch(QVector<QString>* strings);
+    void tryAdd(QString name);
 
 signals:
     void serverError();
@@ -39,6 +40,7 @@ signals:
     void loginFinished(int re);
     void logoutFinished(int re);
     void searchFinished(int re, QVector<QString>* strs);
+    void addFinished(int re);
 
 };
 

@@ -118,6 +118,51 @@ void Server::processLogin(int fd)
     }
 }
 
+void Server::processAdd(int fd)
+{
+    char buf[32];
+    if(recv(fd, buf, 32, 0) <= 0)
+    {
+        onConnectionClosed(fd);
+    }
+    int len = (int)buf[0];
+    std::string name;
+    name = name.assign(buf + 1, len);
+    std::string requester = instance->usernames[fd];
+    char re;
+    if(instance->passwords.count(name))
+    {
+        if(instance->friends.count(requester))
+        {
+            if(instance->friends[requester].count(name))
+            {
+                re = (char)ALREADY_FRIEND;
+                send(fd, &re, 1, 0);
+                std::cout << "User " << name << " is already friend of " << requester << ". Adding friend failed.\n\n";
+            }
+        }
+        else
+        {
+            instance->friends[requester] = std::set<std::string>();
+        }
+        instance->friends[requester].insert(name);
+        if(!instance->friends.count(name))
+        {
+            instance->friends[name] = std::set<std::string>();
+        }
+        instance->friends[name].insert(requester);
+        re = (char)SUCCESS;
+        send(fd, &re, 1, 0);
+        std::cout << "User " << name << " added as friend of " << requester << ".\n\n";
+    }
+    else
+    {
+        re = (char)USER_NON_EXIST;
+        send(fd, &re, 1, 0);
+        std::cout << "User " << name << " does not exist. Adding friend failed.\n\n";
+    }
+}
+
 void Server::onConnectionClosed(int fd)
 {
     std::cout << "Connection with " << instance->clientIPs[fd] << " is closed.\n\n";
@@ -155,6 +200,10 @@ void* Server::service_thread(void *p)
         case ACTION_SEARCH:
             std::cout << "IP " << instance->clientIPs[fd] << " requested searching.\n\n";
             processSearch(fd);
+            break;
+        case ACTION_ADD:
+            std::cout << "IP " << instance->clientIPs[fd] << " requested adding friend.\n\n";
+            processAdd(fd);
             break;
         default:
             std::cout << "Invalid actioin: " << (int)action << ".\n\n";

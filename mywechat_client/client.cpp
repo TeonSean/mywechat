@@ -56,6 +56,22 @@ void Client::tryConnect(const char *ip, int port)
     emit connectFinished(::connect(client, (sockaddr*)&addr, sizeof(addr)));
 }
 
+void Client::tryAdd(QString name)
+{
+    sendAction(ACTION_ADD);
+    char buf[32];
+    buf[0] = (char)name.size();
+    name.toStdString().copy(buf + 1, name.size());
+    send(client, buf, 32, 0);
+    char re;
+    if(recv(client, &re, 1, 0) <= 0)
+    {
+        closeConnect();
+        emit serverError();
+    }
+    emit addFinished(re);
+}
+
 void Client::tryLogout()
 {
     sendAction(ACTION_LOGOUT);

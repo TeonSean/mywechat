@@ -17,6 +17,7 @@
 #include <map>
 #include "messagedef.h"
 #include <iostream>
+#include <set>
 
 #define PORT 8088
 
@@ -31,6 +32,7 @@ private:
     std::map<int, std::string> usernames;
     std::map<std::string, int> usersockets;
     std::map<std::string, std::string> passwords;
+    std::map<std::string, std::set<std::string> > friends;
     Server();
 
 public:
@@ -42,6 +44,7 @@ public:
     static void processLogout(int fd);
     static void processSearch(int fd);
     static void onConnectionClosed(int fd);
+    static void processAdd(int fd);
 };
 
 #endif // SERVER_H
