@@ -6,7 +6,6 @@ ServerConfig::ServerConfig(QWidget *parent) :
     ui(new Ui::ServerConfig)
 {
     ui->setupUi(this);
-    ui->lineEdit->setText("183.172.147.180");
     ui->lineEdit_2->setText("8088");
 }
 

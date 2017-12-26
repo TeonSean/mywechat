@@ -63,13 +63,22 @@ private slots:
 
     void on_new_msg(QString name, QString msg);
 
+    void on_new_file(QString sender, int flen, QString fname);
+
     void on_nothing_new();
+
+    void on_recvfile_clicked();
+
+    void on_receiving(int remain, int all);
+
+    void on_receive_finished();
 
 private:
     Ui::MainWindow *ui;
     Client client;
     bool connected;
     bool logged;
+    QString cache;
 
     void onConnect();
     void onDisconnect();
@@ -88,6 +97,7 @@ signals:
     void tryProfile();
     void tryChat(QString name);
     void tryReceiveMsg();
+    void tryReceiveFile();
 };
 
 #endif // MAINWINDOW_H

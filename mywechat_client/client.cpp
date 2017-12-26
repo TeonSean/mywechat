@@ -1,4 +1,6 @@
 #include"client.h"
+#include<QFile>
+#include<QFileInfo>
 
 ReadThread::ReadThread(int fd, Client* client, pthread_mutex_t *mtx):
     QThread(NULL), fd(fd), client(client), mtx(mtx)
@@ -71,6 +73,45 @@ void ReadThread::run()
         }
         case ACTION_RECV_FILE:
         {
+            char* state = new char;
+            *state = readAction();
+            client->queues[action].push(state);
+            if(*state == NEW_FILE)
+            {
+                std::string* sender = new std::string;
+                int* flen = new int;
+                std::string* fname = new std::string;
+                *sender = readName();
+                *flen = readInt();
+                *fname = readFileName();
+                client->queues[action].push(sender);
+                client->queues[action].push(flen);
+                client->queues[action].push(fname);
+                int remain = *flen;
+                while(true)
+                {
+                    if(remain > 1024)
+                    {
+                        char* buf = new char[1024];
+                        if(recv(fd, buf, 1024, 0) <= 0)
+                        {
+                            emit serverError();
+                        }
+                        remain -= 1024;
+                        client->queues[action].push(buf);
+                    }
+                    else
+                    {
+                        char* buf = new char[remain];
+                        if(recv(fd, buf, remain, 0) <= 0)
+                        {
+                            emit serverError();
+                        }
+                        client->queues[action].push(buf);
+                        break;
+                    }
+                }
+            }
             break;
         }
         default:
@@ -106,6 +147,20 @@ char ReadThread::readAction()
     }
     std::cout << "read action " << (int)c << ".\n";
     return c;
+}
+
+std::string ReadThread::readFileName()
+{
+    char buf[128];
+    if(recv(fd, buf, 128, 0) <= 0)
+    {
+        emit serverError();
+        return "";
+    }
+    std::string re;
+    re = re.assign(buf + sizeof(int), *(int*)buf);
+    std::cout << "read file name " << re << ".\n";
+    return re;
 }
 
 std::string ReadThread::readMessage()
@@ -163,11 +218,91 @@ Client::~Client()
     delete mtx;
 }
 
+void Client::sendFileName(std::string name)
+{
+    char buf[128];
+    *(int*)buf = name.size();
+    name.copy(buf + sizeof(int), name.size());
+    send(client, buf, 128, 0);
+    std::cout << "Sent file name " << name << ".\n";
+}
+
 void Client::sendMessage(std::string msg)
 {
     sendInt(msg.size());
     send(client, msg.c_str(), msg.size(), 0);
     std::cout << "Sent msg " << msg << ".\n";
+}
+
+void Client::trySendFile(QString name, QFile* f)
+{
+    sendAction(ACTION_SEND_FILE);
+    sendName(name.toStdString());
+    sendInt(f->size());
+    QFileInfo fi(f->fileName());
+    sendFileName(fi.fileName().toStdString());
+    FILE* fp = fopen(f->fileName().toStdString().c_str(), "r");
+    char buf[1024];
+    int remain = f->size();
+    while(!feof(fp))
+    {
+        int actual = fread(buf, 1, 1024, fp);
+        if(actual != 1024)
+        {
+            assert(actual == remain);
+        }
+        remain -= 1024;
+        send(client, buf, actual, 0);
+        emit sending(remain, f->size());
+    }
+    fclose(fp);
+    char* action = (char*)getNext(ACTION_SEND_FILE);
+    emit sendFileFinished((int)*action, fi.fileName());
+    delete action;
+}
+
+void Client::tryReceiveFile()
+{
+    sendAction(ACTION_RECV_FILE);
+    char* action = (char*)getNext(ACTION_RECV_FILE);
+    if(*action == NOTHING_NEW)
+    {
+        emit noNewMsgFile();
+    }
+    else if(*action == NEW_FILE)
+    {
+        std::string* sender = (std::string*)getNext(ACTION_RECV_FILE);
+        int* len = (int*)getNext(ACTION_RECV_FILE);
+        std::string* fname = (std::string*)getNext(ACTION_RECV_FILE);
+        emit newFile(QString::fromStdString(*sender), *len, QString::fromStdString(*fname));
+        int remain = *len;
+        QString path = "/home/teon/Downloads/" + QString::fromStdString(*fname);
+        FILE* f = fopen(path.toStdString().c_str(), "w");
+        while(true)
+        {
+            if(remain > 1024)
+            {
+                char* buf = (char*)getNext(ACTION_RECV_FILE);
+                fwrite(buf, 1, 1024, f);
+                remain -= 1024;
+                emit receiving(remain, *len);
+                delete buf;
+            }
+            else
+            {
+                char* buf = (char*)getNext(ACTION_RECV_FILE);
+                fwrite(buf, 1, remain, f);
+                delete buf;
+                break;
+            }
+        }
+        fclose(f);
+        emit receiveFinished();
+        delete fname;
+        delete len;
+        delete sender;
+    }
+    delete action;
 }
 
 void Client::tryReceiveMsg()

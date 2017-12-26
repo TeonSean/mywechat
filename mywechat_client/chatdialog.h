@@ -24,6 +24,9 @@ protected:
 
 signals:
     void newMsg(QString msg);
+    void newFile(int len, QString fname);
+    void receiving(int remain, int all);
+    void receiveFinished();
 };
 
 class ChatDialog : public QDialog
@@ -47,15 +50,27 @@ private slots:
 
     void on_new_msg(QString str);
 
+    void on_new_file(int len, QString fname);
+
+    void on_send_file_finished(int re, QString fname);
+
+    void on_receiving(int remain, int all);
+
+    void on_received_finished();
+
+    void on_sending(int remain, int all);
+
 private:
     Ui::ChatDialog *ui;
     Client& client;
     QString peername;
     Reader* thread;
+    QString cache;
 
 signals:
     void trySendMsg(QString name, QString msg);
     void tryExit();
+    void trySendFile(QString name, QFile* f);
 };
 
 #endif // CHATDIALOG_H

@@ -71,6 +71,15 @@ void Server::sendName(int fd, std::string name)
     send(fd, buf, 32, 0);
 }
 
+void Server::sendFileName(int fd, std::string name)
+{
+    std::cout << "Sent file name " << name << ".\n";
+    char buf[128];
+    *(int*)buf = name.size();
+    name.copy(buf + sizeof(int), name.size());
+    send(fd, buf, 128, 0);
+}
+
 std::string Server::receiveMessage(int fd)
 {
     int n = receiveInt(fd);
@@ -117,6 +126,20 @@ std::string Server::receiveName(int fd)
     std::string re;
     re = re.assign(buf + 1, (int)buf[0]);
     std::cout << "Received name " << re << ".\n";
+    return re;
+}
+
+std::string Server::receiveFileName(int fd)
+{
+    char buf[128];
+    if(recv(fd, buf, 128, 0) <= 0)
+    {
+        onConnectionClosed(fd);
+        return "";
+    }
+    std::string re;
+    re = re.assign(buf + sizeof(int), *(int*)buf);
+    std::cout << "Received file name " << re << ".\n";
     return re;
 }
 
@@ -182,7 +205,6 @@ void Server::processLogin(int fd)
     std::string usrname, psword;
     usrname = receiveName(fd);
     psword = receiveName(fd);
-    char re;
     if(usersockets.count(usrname))
     {
         sendAction(fd, ACTION_LOGIN);
@@ -244,7 +266,35 @@ void Server::processChat(int fd)
                     sendName(fd, name);
                     sendMessage(fd, un->msg);
                     std::cout << "Cached message forwarded to " << requester << ".\n";
+                    delete un;
                     unsent_msgs[requester].erase(iter++);
+                }
+                else
+                {
+                    iter++;
+                }
+            }
+        }
+        if(unsent_files.count(requester))
+        {
+            for(std::list<file_info*>::iterator iter = unsent_files[requester].begin();
+                iter != unsent_files[requester].end();)
+            {
+                file_info* fi = *iter;
+                if(fi->sender == name)
+                {
+                    sendAction(fd, ACTION_RECV_MSG);
+                    sendAction(fd, NEW_FILE);
+                    sendAction(fd, ACTION_RECV_FILE);
+                    sendAction(fd, NEW_FILE);
+                    sendName(fd, fi->sender);
+                    sendInt(fd, fi->len);
+                    sendFileName(fd, fi->fileName);
+                    sendFile(fd, fi->buf, fi->len);
+                    std::cout << "Cached file forwarded to " << requester << ".\n";
+                    delete fi->buf;
+                    delete fi;
+                    unsent_files[requester].erase(iter++);
                 }
                 else
                 {
@@ -355,6 +405,112 @@ void Server::onConnectionClosed(int fd)
     pthread_exit(NULL);
 }
 
+void Server::sendFile(int fd, char *buf, int size)
+{
+    char* buffer = new char[1024];
+    int remain = size;
+    while(true)
+    {
+        if(remain > 1024)
+        {
+            memcpy(buffer, buf, 1024);
+            send(fd, buffer, 1024, 0);
+            buf += 1024;
+            remain -= 1024;
+            std::cout << "1024 bytes sent. " << remain << "bytes remaining.\n";
+        }
+        else
+        {
+            memcpy(buffer, buf, remain);
+            send(fd, buffer, remain, 0);
+            std::cout << "File transfer finished.\n";
+            break;
+        }
+    }
+    delete buffer;
+}
+
+void Server::receiveFile(int fd, char *buf, int size)
+{
+    char* buffer = new char[1024];
+    int remain = size;
+    while(true)
+    {
+        if(remain > 1024)
+        {
+            if(recv(fd, buffer, 1024, 0) <= 0)
+            {
+                onConnectionClosed(fd);
+                delete buffer;
+                return;
+            }
+            memcpy(buf, buffer, 1024);
+            buf += 1024;
+            remain -= 1024;
+            std::cout << "1024 bytes received. " << remain << "bytes remaining.\n";
+        }
+        else
+        {
+            if(recv(fd, buffer, remain, 0) <= 0)
+            {
+                onConnectionClosed(fd);
+                delete buffer;
+                return;
+            }
+            memcpy(buf, buffer, remain);
+            std::cout << "File transfer finished.\n";
+            break;
+        }
+    }
+    delete buffer;
+}
+
+void Server::processSendFile(int fd)
+{
+    std::string receiver = receiveName(fd);
+    int flen = receiveInt(fd);
+    std::string fname = receiveFileName(fd);
+    std::string requester = usernames[fd];
+    std::cout << requester << " attempts to transfer file " << fname << " to " << receiver
+              << ", file size is " << flen << "\n";
+    char* buf = new char[flen];
+    receiveFile(fd, buf, flen);
+    sendAction(fd, ACTION_SEND_FILE);
+    sendAction(fd, SUCCESS);
+    pthread_mutex_lock(&chatting_lock);
+    if(chattingWith.count(receiver) && chattingWith[receiver] == requester)
+    {
+        int fd2 = usersockets[receiver];
+        sendAction(fd2, ACTION_RECV_MSG);
+        sendAction(fd2, NEW_FILE);
+        sendAction(fd2, ACTION_RECV_FILE);
+        sendAction(fd2, NEW_FILE);
+        sendName(fd2, requester);
+        sendInt(fd2, flen);
+        sendFileName(fd2, fname);
+        sendFile(fd2, buf, flen);
+        std::cout << "File  forwarded to " << receiver << " directly.\n\n";
+        delete buf;
+    }
+    else
+    {
+        file_info* fi = new file_info;
+        fi->sender = requester;
+        fi->len = flen;
+        fi->fileName = fname;
+        fi->buf = buf;
+        pthread_mutex_lock(&unsent_lock);
+        if(!unsent_files.count(receiver))
+        {
+            unsent_files[receiver] = std::list<file_info*>();
+        }
+        unsent_files[receiver].push_back(fi);
+        std::cout << "File stored. Will be forwarded to " << receiver << " later.\n\n";
+        pthread_mutex_unlock(&unsent_lock);
+    }
+    pthread_mutex_unlock(&chatting_lock);
+}
+
 void* Server::service_thread(void *p)
 {
     int fd = *(int*)p;
@@ -399,6 +555,10 @@ void* Server::service_thread(void *p)
             std::cout << "IP " << instance->clientIPs[fd] << " requested sending message.\n\n";
             instance->processSendMsg(fd);
             break;
+        case ACTION_SEND_FILE:
+            std::cout << "IP " << instance->clientIPs[fd] << " requested sending file.\n\n";
+            instance->processSendFile(fd);
+            break;
         case ACTION_EXIT:
             std::cout << "IP " << instance->clientIPs[fd] << " requested exiting chatting.\n\n";
             instance->processExit(fd);
@@ -407,11 +567,40 @@ void* Server::service_thread(void *p)
             std::cout << "IP " << instance->clientIPs[fd] << " requested receving message.\n\n";
             instance->processRecvMsg(fd);
             break;
+        case ACTION_RECV_FILE:
+            std::cout << "IP " << instance->clientIPs[fd] << " requested receving file.\n\n";
+            instance->processRecvFile(fd);
+            break;
         default:
             std::cout << "Invalid action: " << (int)action << ".\n\n";
         }
     }
     std::cout.flush();
+}
+
+void Server::processRecvFile(int fd)
+{
+    std::string requester = usernames[fd];
+    pthread_mutex_lock(&unsent_lock);
+    if(!unsent_files.count(requester) || unsent_files[requester].size() == 0)
+    {
+        sendAction(fd, ACTION_RECV_FILE);
+        sendAction(fd, NOTHING_NEW);
+        pthread_mutex_unlock(&unsent_lock);
+        return;
+    }
+    sendAction(fd, ACTION_RECV_FILE);
+    sendAction(fd, NEW_FILE);
+    file_info* fi = unsent_files[requester].back();
+    unsent_files[requester].pop_back();
+    sendName(fd, fi->sender);
+    sendInt(fd, fi->len);
+    sendFileName(fd, fi->fileName);
+    sendFile(fd, fi->buf, fi->len);
+    std::cout << "Cached message forwarded to " << requester << ".\n\n";
+    delete fi->buf;
+    delete fi;
+    pthread_mutex_unlock(&unsent_lock);
 }
 
 void Server::processExit(int fd)

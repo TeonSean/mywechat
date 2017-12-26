@@ -15,6 +15,9 @@
 #include <iostream>
 #include <QThread>
 #include <queue>
+#include <QFile>
+#include <assert.h>
+#include "stdio.h"
 
 class Client;
 class Reader;
@@ -37,6 +40,7 @@ protected:
     char readAction();
     int readInt();
     std::string readName();
+    std::string readFileName();
 
 signals:
     void serverError();
@@ -66,6 +70,7 @@ public slots:
     void closeConnect();
     void sendAction(char action);
     void sendName(std::string name);
+    void sendFileName(std::string name);
     void sendInt(int n);
     void sendMessage(std::string msg);
     void tryLogin(QString name, QString code);
@@ -76,8 +81,10 @@ public slots:
     void tryProfile();
     void tryChat(QString name);
     void trySendMsg(QString name, QString msg);
+    void trySendFile(QString name, QFile* f);
     void tryExit();
     void tryReceiveMsg();
+    void tryReceiveFile();
 
 signals:
     void serverError();
@@ -90,9 +97,14 @@ signals:
     void profileFinished(QString name, QString code);
     void chatFinished(int re, QString name);
     void sendFinished(int re, QString text);
+    void sendFileFinished(int re, QString fname);
     void exitFinished(int re);
     void newMsg(QString sender, QString msg);
+    void newFile(QString sender, int flen, QString fname);
     void noNewMsgFile();
+    void sending(int remain, int all);
+    void receiving(int remain, int all);
+    void receiveFinished();
 
 };
 

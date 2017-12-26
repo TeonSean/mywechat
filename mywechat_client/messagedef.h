@@ -22,6 +22,14 @@ struct unsent
     std::string msg;
 };
 
+struct file_info
+{
+    int len;
+    std::string sender;
+    std::string fileName;
+    char* buf;
+};
+
 #define SUCCESS             0
 #define WRONG_PASSWORD      1
 #define ACCOUNT_CREATED     2

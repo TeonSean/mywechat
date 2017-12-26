@@ -36,6 +36,7 @@ private:
     std::map<std::string, std::set<std::string> > friends;
     std::map<std::string, std::string> chattingWith;
     std::map<std::string, std::list<unsent*> > unsent_msgs;
+    std::map<std::string, std::list<file_info*> > unsent_files;
     pthread_mutex_t unsent_lock, chatting_lock;
     Server();
 
@@ -55,14 +56,20 @@ public:
     void processExit(int fd);
     void processSendMsg(int fd);
     void processRecvMsg(int fd);
+    void processSendFile(int fd);
+    void processRecvFile(int fd);
     void sendAction(int fd, char action);
     void sendName(int fd, std::string name);
+    void sendFileName(int fd, std::string name);
     void sendInt(int fd, int n);
     void sendMessage(int fd, std::string msg);
     std::string receiveMessage(int fd);
     int receiveInt(int fd);
     std::string receiveName(int fd);
+    std::string receiveFileName(int fd);
     char receiveAction(int fd);
+    void receiveFile(int fd, char* buf, int size);
+    void sendFile(int fd, char* buf, int size);
 };
 
 #endif // SERVER_H

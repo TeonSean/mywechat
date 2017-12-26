@@ -28,6 +28,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&client, SIGNAL(chatFinished(int,QString)), this, SLOT(on_chat_finished(int,QString)));
     connect(&client, SIGNAL(newMsg(QString,QString)), this, SLOT(on_new_msg(QString,QString)));
     connect(&client, SIGNAL(noNewMsgFile()), this, SLOT(on_nothing_new()));
+    connect(&client, SIGNAL(newFile(QString,int,QString)), this, SLOT(on_new_file(QString,int,QString)));
+    connect(&client, SIGNAL(receiving(int,int)), this, SLOT(on_receiving(int,int)));
+    connect(&client, SIGNAL(receiveFinished()), this, SLOT(on_receive_finished()));
     connect(this, SIGNAL(closeConnect()), &client, SLOT(closeConnect()));
     connect(this, SIGNAL(tryConnect(const char*,int)), &client, SLOT(tryConnect(const char*,int)));
     connect(this, SIGNAL(tryLogin(QString,QString)), &client, SLOT(tryLogin(QString,QString)));
@@ -38,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(tryProfile()), &client, SLOT(tryProfile()));
     connect(this, SIGNAL(tryChat(QString)), &client, SLOT(tryChat(QString)));
     connect(this, SIGNAL(tryReceiveMsg()), &client, SLOT(tryReceiveMsg()));
+    connect(this, SIGNAL(tryReceiveFile()), &client, SLOT(tryReceiveFile()));
 }
 
 MainWindow::~MainWindow()
@@ -104,6 +108,24 @@ void MainWindow::onLogout()
     ui->chat->setEnabled(false);
     ui->recvfile->setEnabled(false);
     ui->recvmsg->setEnabled(false);
+}
+
+void MainWindow::on_receive_finished()
+{
+    showMessage(cache + "\nDownload finished.");
+    ui->recvfile->setEnabled(true);
+    ui->recvmsg->setEnabled(true);
+}
+
+void MainWindow::on_receiving(int remain, int all)
+{
+    showMessage(cache + "\n" + QString::number(remain) + "/" + QString::number(all) + " bytes...");
+}
+
+void MainWindow::on_new_file(QString sender, int flen, QString fname)
+{
+    cache = "New file " + fname + " from " + sender + ", file size is " + QString::number(flen) + " bytes.\nDownloading...";
+    showMessage(cache);
 }
 
 void MainWindow::on_new_msg(QString name, QString msg)
@@ -381,6 +403,7 @@ void MainWindow::on_chat_clicked()
         }
         client.tryChat(uni->getUsername());
     }
+    delete uni;
 }
 
 void MainWindow::on_recvmsg_clicked()
@@ -390,4 +413,13 @@ void MainWindow::on_recvmsg_clicked()
     ui->recvmsg->setEnabled(false);
     ui->recvfile->setEnabled(false);
     emit tryReceiveMsg();
+}
+
+void MainWindow::on_recvfile_clicked()
+{
+    assert(connected);
+    assert(logged);
+    ui->recvmsg->setEnabled(false);
+    ui->recvfile->setEnabled(false);
+    emit tryReceiveFile();
 }
