@@ -11,15 +11,17 @@
 #define ACTION_RECV_MSG     7
 #define ACTION_RECV_FILE    8
 #define ACTION_PROFILE      9
-#define ACTION_SYNC         10
+#define ACTION_CHAT         10
+#define ACTION_EXIT         11
 
-struct login_packet
+#include<string>
+
+struct unsent
 {
-    char namelen;
-    char name[31];
-    char codelen;
-    char code[31];
+    std::string sender;
+    std::string msg;
 };
+
 #define SUCCESS             0
 #define WRONG_PASSWORD      1
 #define ACCOUNT_CREATED     2
@@ -27,5 +29,9 @@ struct login_packet
 #define ALREADY_FRIEND      1
 #define USER_NON_EXIST      2
 #define ADD_YOURSELF        3
+#define NOT_YOUR_FRIEND     1
+#define NOTHING_NEW         1
+#define NEW_MSG             2
+#define NEW_FILE            3
 
 #endif // MESSAGEDEF_H

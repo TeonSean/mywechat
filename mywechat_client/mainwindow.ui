@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>455</width>
-    <height>301</height>
+    <width>574</width>
+    <height>394</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>431</width>
-      <height>281</height>
+      <width>551</width>
+      <height>371</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="9,1">
@@ -39,7 +39,7 @@
           <widget class="QListView" name="friends"/>
          </item>
          <item>
-          <widget class="QTextBrowser" name="profile"/>
+          <widget class="QTextBrowser" name="message"/>
          </item>
         </layout>
        </item>
@@ -106,6 +106,27 @@
         <widget class="QPushButton" name="prof">
          <property name="text">
           <string>Profile</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="chat">
+         <property name="text">
+          <string>Chat</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="recvmsg">
+         <property name="text">
+          <string>Recv msg</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="recvfile">
+         <property name="text">
+          <string>Recv file</string>
          </property>
         </widget>
        </item>

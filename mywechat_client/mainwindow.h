@@ -41,19 +41,29 @@ private slots:
 
     void on_logout_finished(int re);
 
-    void on_search_finished(int re, QVector<QString>* strs);
+    void on_search_finished(QVector<QString>* strs);
 
     void on_add_finished(int re);
 
     void on_add_clicked();
 
-    void on_list_finished(int re, QVector<QString>* strs);
+    void on_list_finished(QVector<QString>* strs);
 
     void on_list_clicked();
 
-    void on_profile_finished(int re, QString name, QString code);
+    void on_profile_finished(QString name, QString code);
 
     void on_prof_clicked();
+
+    void on_chat_clicked();
+
+    void on_chat_finished(int re, QString name);
+
+    void on_recvmsg_clicked();
+
+    void on_new_msg(QString name, QString msg);
+
+    void on_nothing_new();
 
 private:
     Ui::MainWindow *ui;
@@ -76,6 +86,8 @@ signals:
     void tryAdd(QString name);
     void tryList(QVector<QString>* strings);
     void tryProfile();
+    void tryChat(QString name);
+    void tryReceiveMsg();
 };
 
 #endif // MAINWINDOW_H

@@ -18,6 +18,7 @@
 #include "messagedef.h"
 #include <iostream>
 #include <set>
+#include <stack>
 
 #define PORT 8088
 
@@ -33,6 +34,9 @@ private:
     std::map<std::string, int> usersockets;
     std::map<std::string, std::string> passwords;
     std::map<std::string, std::set<std::string> > friends;
+    std::map<std::string, std::string> chattingWith;
+    std::map<std::string, std::list<unsent*> > unsent_msgs;
+    pthread_mutex_t unsent_lock, chatting_lock;
     Server();
 
 public:
@@ -40,13 +44,25 @@ public:
     void loop();
     static void* service_thread(void* p);
     static Server* getInstance();
-    static void onConnectionClosed(int fd);
-    static void processLogin(int fd);
-    static void processLogout(int fd);
-    static void processSearch(int fd);
-    static void processAdd(int fd);
-    static void processList(int fd);
-    static void processProfile(int fd);
+    void onConnectionClosed(int fd);
+    void processLogin(int fd);
+    void processLogout(int fd);
+    void processSearch(int fd);
+    void processAdd(int fd);
+    void processList(int fd);
+    void processProfile(int fd);
+    void processChat(int fd);
+    void processExit(int fd);
+    void processSendMsg(int fd);
+    void processRecvMsg(int fd);
+    void sendAction(int fd, char action);
+    void sendName(int fd, std::string name);
+    void sendInt(int fd, int n);
+    void sendMessage(int fd, std::string msg);
+    std::string receiveMessage(int fd);
+    int receiveInt(int fd);
+    std::string receiveName(int fd);
+    char receiveAction(int fd);
 };
 
 #endif // SERVER_H

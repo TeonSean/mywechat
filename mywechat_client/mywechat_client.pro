@@ -30,7 +30,8 @@ SOURCES += \
     client.cpp \
     serverconfig.cpp \
     login.cpp \
-    usernameinput.cpp
+    usernameinput.cpp \
+    chatdialog.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -38,10 +39,12 @@ HEADERS += \
     serverconfig.h \
     messagedef.h \
     login.h \
-    usernameinput.h
+    usernameinput.h \
+    chatdialog.h
 
 FORMS += \
         mainwindow.ui \
     serverconfig.ui \
     login.ui \
-    usernameinput.ui
+    usernameinput.ui \
+    chatdialog.ui
